@@ -24,6 +24,9 @@
         </mat-card-actions>
     </mat-card>
   </div>
+  <div fxFlex="40" [hidden]="dish">
+    <mat-spinner></mat-spinner> <h4>Loading</h4>
+  </div>
 
   <div fxFlex="40">
     <mat-list *ngIf="dish">
@@ -35,7 +38,11 @@
                 <span> --{{comment.author}} {{comment.date | date}} </span>
             </p>
         </mat-list-item>
-      </mat-list>
+    </mat-list>
   </div>
+  
+  <div fxFlex="40" [hidden]="dish">
+        <mat-spinner></mat-spinner> <h4>Loading</h4>
+    </div>
 
 </div>
