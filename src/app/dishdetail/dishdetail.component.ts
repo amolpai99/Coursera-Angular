@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { Dish } from '../shared/dish';
 import { Params, ActivatedRoute } from '@angular/router';
 import { Location } from '@angular/common';
@@ -16,6 +16,7 @@ import { Comment } from '../shared/comment';
 export class DishdetailComponent implements OnInit {
 
   dish: Dish;
+  errMsg: string;
   dishIds: string[];
   prev: string; 
   next: string;
@@ -26,6 +27,8 @@ export class DishdetailComponent implements OnInit {
 
   commentForm: FormGroup
   comment: Comment
+
+  dishCopy: Dish
 
   formErrors: {[key: string]: string} = {
     'author': '',
@@ -45,7 +48,8 @@ export class DishdetailComponent implements OnInit {
   constructor(private dishService: DishService,
     private route: ActivatedRoute,
     private location: Location,
-    private fb: FormBuilder) {
+    private fb: FormBuilder,
+    @Inject('BaseURL') public BaseURL: string) {
       this.createForm();
     }
 
@@ -53,7 +57,10 @@ export class DishdetailComponent implements OnInit {
     this.dishService.getDishIds().subscribe((ids) => this.dishIds = ids);
     this.route.params
       .pipe(switchMap((params) => this.dishService.getDish(params['id'])))
-      .subscribe((dish) => {this.dish = dish; this.setPrevNext(dish.id)});
+      .subscribe({
+        next: (dish) => {this.dish = dish; this.dishCopy = dish; this.setPrevNext(dish.id)},
+        error: (errMsg) => this.errMsg = errMsg
+      });
   }
 
   createForm() {
@@ -104,17 +111,23 @@ export class DishdetailComponent implements OnInit {
 
   onSubmit() {
     this.comment = this.commentForm.value;
+    this.comment.date = new Date().toISOString();
     console.log(this.comment);
+    this.dishCopy.comments.push(this.comment);
+    this.dishService.putDish(this.dishCopy)
+      .subscribe({
+      next: dish => {
+        this.dish = dish;
+        this.dishCopy = dish;
+      },
+      error: errMsg => { this.dish = new Dish; this.dishCopy = new Dish; this.errMsg = errMsg}
+    });
+    
     this.commentForm.reset({
       author: '',
       rating: 5,
       comment: ''
     });
-    this.commentFormDirective.resetForm();
-
-    const date = new Date().toISOString();
-    this.comment.date = date;
-    
-    this.dish.comments.push(this.comment);
+    this.commentFormDirective.resetForm();    
   }
 }
