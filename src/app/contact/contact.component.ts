@@ -1,9 +1,10 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { faSkype } from '@fortawesome/free-brands-svg-icons';
+import { faSketch, faSkype } from '@fortawesome/free-brands-svg-icons';
 import { faEnvelope, faFax, faPhone } from '@fortawesome/free-solid-svg-icons';
 import { FormBuilder, FormGroup, NgForm, Validators } from '@angular/forms';
 import { Feedback, ContactType } from '../shared/feedback';
-import { flyInOut } from '../animations/app.animation';
+import { expand, flyInOut } from '../animations/app.animation';
+import { FeedbackService } from '../services/feedback.service';
 
 @Component({
   selector: 'app-contact',
@@ -14,7 +15,8 @@ import { flyInOut } from '../animations/app.animation';
     'style': 'display: block;'
   },
   animations: [
-    flyInOut()
+    flyInOut(),
+    expand()
   ]
 })
 export class ContactComponent implements OnInit {
@@ -26,8 +28,13 @@ export class ContactComponent implements OnInit {
 
   feedbackForm: FormGroup;
   feedback: Feedback;
+  feedbackCopy: Feedback;
+  errMsg: string;
   contactType = ContactType;
   @ViewChild('fform') feedbackFormDirective: NgForm;
+
+  visibility: boolean = true;
+  showFeedback: boolean = false;
 
   formErrors: {[key: string]: string} = {
     'firstname': '',
@@ -57,7 +64,8 @@ export class ContactComponent implements OnInit {
     }
   };
 
-  constructor(private fb: FormBuilder) {
+  constructor(private fb: FormBuilder,
+    private feedbackService: FeedbackService) {
     this.createForm();
   }
 
@@ -105,6 +113,17 @@ export class ContactComponent implements OnInit {
   onSubmit() {
     this.feedback = this.feedbackForm.value;
     console.log(this.feedback);
+
+    this.visibility = false;
+
+    this.feedbackService.submitFeedback(this.feedback)
+      .subscribe({
+        next: (feedback) => {this.feedbackCopy = feedback; this.showFeedback = true; this.visibility = true; setTimeout(() => {
+          this.showFeedback = false;
+        }, 5000); return},
+        error: (errMsg) => this.errMsg = errMsg
+      })
+
     this.feedbackForm.reset({
       firstname: '',
       lastname: '',

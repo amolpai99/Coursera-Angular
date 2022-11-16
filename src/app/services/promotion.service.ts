@@ -1,25 +1,35 @@
 import { Injectable } from '@angular/core';
 import { PROMOTIONS } from '../shared/promotions';
 import { Promotion } from '../shared/promotion';
-import { delay, Observable, of } from 'rxjs';
+import { catchError, delay, map, Observable, of } from 'rxjs';
+import { baseURL } from '../shared/baseurl';
+import { HttpClient } from '@angular/common/http';
+import { ProcessHTTPMsgService } from './process-httpmsg.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PromotionService {
 
-  constructor() { }
+  constructor(
+    private httpClient: HttpClient,
+    private processMessage: ProcessHTTPMsgService  
+  ) { }
 
   getPromotions(): Observable<Promotion[]> {
-    return of(PROMOTIONS).pipe(delay(2000));
+    return this.httpClient.get<Promotion[]>(baseURL + 'promotions')
+            .pipe(catchError(this.processMessage.handleError));
   }
 
   getPromotion(id: string): Observable<Promotion> {
-    return of(PROMOTIONS.filter((promotion) => (promotion.id === id))[0]).pipe(delay(2000));
+    return this.httpClient.get<Promotion>(baseURL + 'promotions' + id)
+            .pipe(catchError(this.processMessage.handleError));
   }
 
   getFeaturedPromotion(): Observable<Promotion> {
-    return of(PROMOTIONS.filter((promotion) => promotion.featured)[0]).pipe(delay(2000));
+    return this.httpClient.get<Promotion[]>(baseURL + 'promotions?featured=true')
+            .pipe(map(promotions => promotions[0]))
+            .pipe(catchError(this.processMessage.handleError));
   }
 
 }
